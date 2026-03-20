@@ -4,8 +4,13 @@ const mongoose = require("mongoose");
 
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const jwt =require("jsonwebtoken")
+// import bcrypt from "bcryptjs";
+// import jwt from "jsonwebtoken";
+const bcrypt = require("bcryptjs");
 
 const { HoldingsModel } = require("./model/HoldingsModel");
+const {UserModel}=require("./model/UsersModel");
 
 const { PositionsModel } = require("./model/PositionsModels");
 // const { OrdersModel } = require("./model/OrdersModels");
