@@ -1,35 +1,29 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "../auth.css";
 
-export default function Signup() {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+export default function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
-  const [message, setMessage] = useState(null); // { type: "success"|"error", text: "..." }
+  const [message, setMessage] = useState(null); // { type: "error", text: "..." }
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const errs = {};
-    if (!form.name.trim()) errs.name = "Name is required";
     if (!form.email.trim()) {
       errs.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       errs.email = "Enter a valid email address";
     }
-    if (!form.password) {
-      errs.password = "Password is required";
-    } else if (form.password.length < 6) {
-      errs.password = "Password must be at least 6 characters";
-    }
+    if (!form.password) errs.password = "Password is required";
     return errs;
   };
 
   const handleChange = (field) => (e) => {
     setForm({ ...form, [field]: e.target.value });
-    // Clear field error on change
     if (errors[field]) setErrors({ ...errors, [field]: undefined });
+    setMessage(null);
   };
 
   const handleSubmit = async (e) => {
@@ -45,11 +39,15 @@ export default function Signup() {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3002";
-      await axios.post(`${apiUrl}/signup`, form);
-      setMessage({ type: "success", text: "Account created! Redirecting to login..." });
-      setTimeout(() => navigate("/login"), 1500);
+      const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || "http://localhost:5174";
+      
+      const res = await axios.post(`${apiUrl}/login`, form);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userName", res.data.user.name);
+      localStorage.setItem("userEmail", res.data.user.email);
+      window.location.href = dashboardUrl;
     } catch (err) {
-      const msg = err.response?.data?.msg || "Something went wrong. Please try again.";
+      const msg = err.response?.data?.msg || "Login failed. Please try again.";
       setMessage({ type: "error", text: msg });
     } finally {
       setLoading(false);
@@ -62,8 +60,8 @@ export default function Signup() {
         <div className="auth-logo">
           <img src="/media/images/stocklab.png" alt="StockLab" />
         </div>
-        <h1 className="auth-title">Create Account</h1>
-        <p className="auth-subtitle">Join StockLab and start trading smarter</p>
+        <h1 className="auth-title">Welcome Back</h1>
+        <p className="auth-subtitle">Sign in to your StockLab account</p>
 
         {message && (
           <div className={`auth-message ${message.type}`}>{message.text}</div>
@@ -71,22 +69,9 @@ export default function Signup() {
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label htmlFor="signup-name">Full Name</label>
+            <label htmlFor="login-email">Email Address</label>
             <input
-              id="signup-name"
-              type="text"
-              placeholder="Your full name"
-              value={form.name}
-              onChange={handleChange("name")}
-              className={errors.name ? "input-error" : ""}
-            />
-            {errors.name && <span className="field-error">{errors.name}</span>}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="signup-email">Email Address</label>
-            <input
-              id="signup-email"
+              id="login-email"
               type="email"
               placeholder="you@example.com"
               value={form.email}
@@ -97,11 +82,11 @@ export default function Signup() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="signup-password">Password</label>
+            <label htmlFor="login-password">Password</label>
             <input
-              id="signup-password"
+              id="login-password"
               type="password"
-              placeholder="Min. 6 characters"
+              placeholder="Your password"
               value={form.password}
               onChange={handleChange("password")}
               className={errors.password ? "input-error" : ""}
@@ -111,12 +96,12 @@ export default function Signup() {
 
           <button type="submit" className="auth-btn" disabled={loading}>
             {loading && <span className="spinner" />}
-            {loading ? "Creating Account..." : "Create Account"}
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
         <p className="auth-footer">
-          Already have an account? <Link to="/login">Sign in</Link>
+          Don't have an account? <Link to="/signup">Sign up</Link>
         </p>
       </div>
     </div>
