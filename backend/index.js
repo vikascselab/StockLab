@@ -1,19 +1,20 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const jwt =require("jsonwebtoken")
+const jwt = require("jsonwebtoken")
 // import bcrypt from "bcryptjs";
 // import jwt from "jsonwebtoken";
 const bcrypt = require("bcryptjs");
 
 const { HoldingsModel } = require("./model/HoldingsModel");
-const {UserModel}=require("./model/UsersModel");
+const User = require("./model/UsersModel");
 
 const { PositionsModel } = require("./model/PositionsModels");
-// const { OrdersModel } = require("./model/OrdersModels");
+const { OrdersModel } = require("./model/OrdersModels");
 
 
 
@@ -26,9 +27,33 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-app.get("/",(req,res)=>{
-  res.send("jai shree ram")
-})
+// API Routes (Keep existing)
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+// Serve Dashboard static files
+app.use("/dashboard", express.static(path.join(__dirname, "../dashboard/dist")));
+
+// Serve Frontend static files
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+// Helper for SPA routing
+const serveFrontend = (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+};
+
+const serveDashboard = (req, res) => {
+  res.sendFile(path.join(__dirname, "../dashboard/dist/index.html"));
+};
+
+app.get("/", (req, res) => {
+  res.send("StockLab API is running.");
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
 
 // this is for dumy data
@@ -212,12 +237,90 @@ app.get("/allPositions", async (req, res) => {
   let allPositions = await PositionsModel.find({});
   res.json(allPositions);
 });
-
-
-
-app.listen(PORT, () => {
-  console.log("App started!");
-  console.log(`Port working at ${PORT} `)
- mongoose.connect(url);
-  console.log("DB started!");
+app.post("/newOrder", async (req, res) => {
+  try {
+    const newOrder = new OrdersModel({
+      name: req.body.name,
+      qty: req.body.qty,
+      price: req.body.price,
+      mode: req.body.mode,
+    });
+    await newOrder.save();
+    res.json({ msg: "Order placed successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+// 🔐 SIGNUP
+app.post("/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const exist = await User.findOne({ email });
+    if (exist) return res.json({ msg: "User already exists" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword
+    });
+
+    await user.save();
+
+    res.json({ msg: "Signup successful" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 🔐 LOGIN
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.json({ msg: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.json({ msg: "Invalid password" });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "secret123", {
+      expiresIn: "1d"
+    });
+
+    res.json({
+      token,
+      user: {
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+//// ...................
+
+
+
+// Catch-all for Dashboard (Must come before frontend catch-all)
+app.get(/^\/dashboard/, serveDashboard);
+
+// Catch-all for Frontend (Landing pages)
+app.get(/^\/(?!dashboard).*/, serveFrontend);
+
+
+mongoose.connect(url)
+  .then(() => {
+    console.log("Connected to MongoDB");
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB", err);
+  });
