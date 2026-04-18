@@ -18,6 +18,11 @@ const Menu = () => {
   const menuClass = "menu";
   const activeMenuClass = "menu selected";
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.href = import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173";
+  };
+
   return (
     <div className="menu-container">
       <img src="logo.png" style={{ width: "50px" }} />
@@ -93,7 +98,9 @@ const Menu = () => {
         <hr />
         <div className="profile" onClick={handleProfileClick}>
           <div className="avatar">ZU</div>
-          <p className="username">USERID</p>
+          <button onClick={handleLogout} className="btn btn-danger">
+            Logout
+          </button>
         </div>
       </div>
     </div>

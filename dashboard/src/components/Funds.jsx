@@ -35,7 +35,7 @@ const Funds = () => {
               <p>4,043.10</p>
             </div>
             <div className="data">
-              <p>Opening Balance</p>
+              <p>Closing Balance</p>
               <p>3736.40</p>
             </div>
             <div className="data">

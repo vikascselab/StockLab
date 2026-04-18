@@ -8,8 +8,8 @@ const Holdings = () => {
   const [allHoldings, setAllHoldings] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:3002/allHoldings").then((res) => {
-      // console.log(res.data);
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3002";
+    axios.get(`${apiUrl}/allHoldings`).then((res) => {
       setAllHoldings(res.data);
     });
   }, []);
