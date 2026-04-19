@@ -1,0 +1,10 @@
+{
+  "name": "zerodha-monolith",
+  "version": "1.0.0",
+  "scripts": {
+    "install-all": "npm install --prefix backend && npm install --prefix frontend && npm install --prefix dashboard",
+    "build-all": "npm run build --prefix frontend && npm run build --prefix dashboard",
+    "start": "node backend/index.js",
+    "render-build": "npm run install-all && npm run build-all"
+  }
+}
